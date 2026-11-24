@@ -24,6 +24,8 @@ jobs:
     name: Create & Upload Naruto What If Shorts
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
 
     env:
       # Python version
@@ -171,3 +173,4 @@ jobs:
             git commit -m "Update topic rotation index [skip ci]"
             git push
             echo "Committed updated topic rotation"
+          fi
