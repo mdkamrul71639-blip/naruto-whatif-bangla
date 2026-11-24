@@ -90,13 +90,15 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 5. Setup Google credentials (tolerant of spaces/newlines in secrets)
+      # 5. Setup Google credentials (env-var safe: no shell quoting issues)
       - name: Setup Google credentials
         env:
           YT_TOKEN_B64: ${{ secrets.YOUTUBE_TOKEN_PICKLE }}
+          YT_CLIENT_JSON: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
         run: |
           mkdir -p config
-          echo "${{ secrets.YOUTUBE_CLIENT_SECRETS }}" > config/client_secrets.json
+          # Write via env var - preserves double quotes in the JSON
+          printf '%s' "$YT_CLIENT_JSON" > config/client_secrets.json
           # Strip whitespace/quotes that may slip in when pasting the secret
           printf '%s' "$YT_TOKEN_B64" | tr -d ' \n\r\t"' | base64 -d > config/token.pickle
           python3 -c "import pickle; pickle.load(open('config/token.pickle','rb')); print('token.pickle OK')"
