@@ -218,9 +218,9 @@ class VideoComposer:
             # Add transitions
             if self.add_transitions and len(image_paths) > 1:
                 if idx > 0:  # Fade in (except first)
-                    clip = clip.fx(fadein, self.transition_duration)
+                    clip = clip.fx(vfx.fadein, self.transition_duration)
                 if idx < len(image_paths) - 1:  # Fade out (except last)
-                    clip = clip.fx(fadeout, self.transition_duration)
+                    clip = clip.fx(vfx.fadeout, self.transition_duration)
 
             clips.append(clip)
 
@@ -319,8 +319,8 @@ class VideoComposer:
                 ).set_position(('center', self.video_height * 0.8)) \
                  .set_start(start_time) \
                  .set_duration(end_time - start_time) \
-                 .fx(fadein, 0.3) \
-                 .fx(fadeout, 0.3)
+                 .fx(vfx.fadein, 0.3) \
+                 .fx(vfx.fadeout, 0.3)
 
                 caption_clips.append(txt_clip)
             except Exception as e:
