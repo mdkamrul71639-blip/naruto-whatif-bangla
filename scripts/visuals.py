@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Visuals Fetcher Module
-Downloads stock videos and images from Pexels API
+Visuals Generator Module
+Generates AI images for each scene using Pollinations.ai (free, no API key required)
 """
 
 import os
 import json
 import time
+import urllib.parse
 import requests
 from pathlib import Path
 from typing import List, Dict
@@ -16,288 +17,210 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class VisualsFetcher:
-    """Fetch stock videos and images from Pexels"""
-    
+class AIImageGenerator:
+    """Generate images for each scene using Pollinations.ai free API"""
+
     def __init__(self):
-        self.api_key = os.getenv('PEXELS_API_KEY')
-        
-        if not self.api_key:
-            raise ValueError(
-                "PEXELS_API_KEY not found in environment variables. "
-                "Get a free API key at https://www.pexels.com/api/"
-            )
-        
-        self.headers = {"Authorization": self.api_key}
         self.output_dir = os.getenv('OUTPUT_DIR', 'output')
-        
-        # API endpoints
-        self.video_search_url = "https://api.pexels.com/videos/search"
-        self.photo_search_url = "https://api.pexels.com/v1/search"
-    
-    def search_videos(
-        self, 
-        query: str, 
-        count: int = 5,
-        orientation: str = "landscape",
-        size: str = "medium"
-    ) -> List[Dict]:
+        self.model = os.getenv('IMAGE_MODEL', 'sana')  # sana, flux, turbo, dreamshaper
+        self.width = int(os.getenv('IMAGE_WIDTH', '1080'))
+        self.height = int(os.getenv('IMAGE_HEIGHT', '1920'))  # Shorts 9:16
+        self.nologo = os.getenv('IMAGE_NOLOGO', 'true').lower() == 'true'
+
+        # Pollinations.ai API endpoint
+        self.base_url = "https://image.pollinations.ai/prompt/"
+
+    def _build_image_url(self, prompt: str, seed: str = "") -> str:
+        """Build the Pollinations.ai image generation URL"""
+        encoded_prompt = urllib.parse.quote(prompt)
+        url = f"{self.base_url}{encoded_prompt}?width={self.width}&height={self.height}&nologo={str(self.nologo).lower()}"
+        if seed:
+            url += f"&seed={seed}"
+        return url
+
+    def generate_image(
+        self,
+        prompt: str,
+        filename: str,
+        subfolder: str = "images",
+        seed: str = ""
+    ) -> str:
         """
-        Search for stock videos on Pexels
-        
+        Generate an image from prompt using Pollinations.ai
+
         Args:
-            query: Search query (e.g., "technology", "nature")
-            count: Number of videos to fetch (default: 5)
-            orientation: Video orientation - landscape, portrait, or square
-            size: Video quality - large, medium, or small
-            
-        Returns:
-            List of video metadata dictionaries
-        """
-        
-        print(f"🔍 Searching Pexels for videos: '{query}'")
-        
-        params = {
-            "query": query,
-            "per_page": min(count, 15),  # API max per page is 80
-            "orientation": orientation
-        }
-        
-        try:
-            response = requests.get(
-                self.video_search_url,
-                headers=self.headers,
-                params=params,
-                timeout=30
-            )
-            
-            response.raise_for_status()
-            data = response.json()
-            
-            videos = data.get('videos', [])
-            
-            if not videos:
-                print(f"⚠️  No videos found for query: '{query}'")
-                return []
-            
-            print(f"✅ Found {len(videos)} videos")
-            
-            # Extract relevant video files based on size preference
-            video_metadata = []
-            for video in videos[:count]:
-                video_files = video.get('video_files', [])
-                
-                # Find the best matching video file
-                best_file = self._select_best_video_file(video_files, size)
-                
-                if best_file:
-                    video_metadata.append({
-                        "id": video['id'],
-                        "url": best_file['link'],
-                        "width": best_file.get('width', 1920),
-                        "height": best_file.get('height', 1080),
-                        "duration": video.get('duration', 0),
-                        "query": query
-                    })
-            
-            return video_metadata
-            
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"Failed to fetch videos from Pexels: {str(e)}")
-    
-    def _select_best_video_file(self, video_files: List[Dict], preferred_size: str) -> Dict:
-        """Select the best video file based on quality preferences"""
-        
-        if not video_files:
-            return None
-        
-        # Size priority map
-        size_priority = {
-            "large": ["hd", "sd"],
-            "medium": ["sd", "hd"],
-            "small": ["sd"]
-        }
-        
-        qualities = size_priority.get(preferred_size, ["sd", "hd"])
-        
-        # Try to find a file matching preferred quality
-        for quality in qualities:
-            for vf in video_files:
-                if vf.get('quality') == quality:
-                    return vf
-        
-        # Fallback to first available file
-        return video_files[0]
-    
-    def download_video(self, url: str, filename: str, subfolder: str = "clips") -> str:
-        """
-        Download a video from URL
-        
-        Args:
-            url: Video URL
+            prompt: Image generation prompt (English, detailed)
             filename: Output filename
-            subfolder: Subfolder in output directory (default: clips)
-            
+            subfolder: Subfolder in output directory (default: images)
+            seed: Optional seed for reproducible results
+
         Returns:
-            Path to downloaded file
+            Path to generated image file
         """
-        
+
+        print(f"🎨 Generating AI image: {filename}")
+        print(f"   Prompt: {prompt[:100]}...")
+
         # Create output directory
         output_path = Path(self.output_dir) / subfolder
         output_path.mkdir(parents=True, exist_ok=True)
-        
+
         filepath = output_path / filename
-        
-        print(f"⬇️  Downloading: {filename}")
-        
+
+        url = self._build_image_url(prompt, seed)
+
         try:
-            response = requests.get(url, stream=True, timeout=60)
+            response = requests.get(url, stream=True, timeout=180)
             response.raise_for_status()
-            
-            # Download with progress indication
+
+            # Download with progress
             total_size = int(response.headers.get('content-length', 0))
             downloaded = 0
-            
+
             with open(filepath, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
                         downloaded += len(chunk)
-                        
-                        # Simple progress indicator
                         if total_size > 0:
                             progress = (downloaded / total_size) * 100
                             print(f"\r   Progress: {progress:.1f}%", end='', flush=True)
-            
-            print(f"\n✅ Downloaded: {filepath}")
+
+            print(f"\n✅ Image saved to: {filepath}")
             return str(filepath)
-            
+
         except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"Failed to download video: {str(e)}")
-    
-    def fetch_videos_for_script(self, script_data: Dict = None) -> List[str]:
+            raise RuntimeError(f"Failed to generate image: {str(e)}")
+
+    def generate_images_for_scenes(self, script_data: Dict = None) -> List[str]:
         """
-        Fetch videos based on script topics/keywords
-        
+        Generate images for all scenes from script data
+
         Args:
-            script_data: Dictionary containing script and metadata
-            
+            script_data: Dictionary containing script, scenes, and image_prompts
+
         Returns:
-            List of downloaded video file paths
+            List of generated image file paths
         """
-        
+
         # Load script if not provided
         if script_data is None:
             script_path = f"{self.output_dir}/script.json"
             try:
-                with open(script_path, 'r') as f:
+                with open(script_path, 'r', encoding='utf-8') as f:
                     script_data = json.load(f)
             except FileNotFoundError:
                 raise FileNotFoundError(f"Script file not found: {script_path}")
-        
-        # Load topics for visual queries
-        try:
-            with open('config/topics.json', 'r') as f:
-                topics_data = json.load(f)
-            
-            # Find matching topic
-            script_topic = script_data.get('topic', '')
-            visual_queries = []
-            
-            for topic in topics_data.get('topics', []):
-                if topic['title'].lower() in script_topic.lower():
-                    visual_queries = topic.get('visual_queries', [])
-                    break
-            
-            # Fallback to script tags if no visual queries found
-            if not visual_queries:
-                visual_queries = script_data.get('tags', ['technology'])[:3]
-        
-        except:
-            # Ultimate fallback
-            visual_queries = ['technology', 'abstract', 'business']
-        
-        print(f"\n📹 Fetching videos for queries: {visual_queries}")
-        
+
+        image_prompts = script_data.get('image_prompts', [])
+        scenes = script_data.get('scenes', [])
+
+        if not image_prompts:
+            # Fallback: create prompts from scenes
+            print("⚠️  No image_prompts found, creating from scenes...")
+            image_prompts = []
+            for scene in scenes:
+                prompt = f"Anime style, Naruto artstyle, {scene}, highly detailed, vibrant colors, cinematic lighting, 9:16 aspect ratio"
+                image_prompts.append(prompt)
+
+        print(f"\n🎨 Generating {len(image_prompts)} AI images for scenes...")
+
         downloaded_files = []
-        
-        # Fetch 2 videos per query (can be adjusted)
-        videos_per_query = 2
-        
-        for idx, query in enumerate(visual_queries):
-            videos = self.search_videos(query, count=videos_per_query)
-            
-            for vid_idx, video in enumerate(videos):
-                filename = f"clip_{idx}_{vid_idx}.mp4"
-                
-                try:
-                    filepath = self.download_video(video['url'], filename)
-                    downloaded_files.append(filepath)
-                    
-                    # Rate limiting - be nice to the API
-                    time.sleep(1)
-                    
-                except Exception as e:
-                    print(f"⚠️  Failed to download {filename}: {str(e)}")
-                    continue
-        
+
+        for idx, prompt in enumerate(image_prompts):
+            # Enhance prompt for Naruto anime style
+            enhanced_prompt = self._enhance_prompt(prompt)
+
+            filename = f"scene_{idx+1:02d}.jpg"
+
+            try:
+                filepath = self.generate_image(enhanced_prompt, filename)
+                downloaded_files.append(filepath)
+
+                # Rate limiting - be nice to the free API
+                time.sleep(2)
+
+            except Exception as e:
+                print(f"⚠️  Failed to generate {filename}: {str(e)}")
+                continue
+
         # Save metadata
         visuals_metadata = {
-            "downloaded_files": downloaded_files,
-            "queries": visual_queries,
-            "total_clips": len(downloaded_files)
+            "generated_files": downloaded_files,
+            "prompts_used": image_prompts,
+            "total_images": len(downloaded_files),
+            "model": self.model,
+            "resolution": f"{self.width}x{self.height}"
         }
-        
-        with open(f'{self.output_dir}/visuals_metadata.json', 'w') as f:
-            json.dump(visuals_metadata, f, indent=2)
-        
-        print(f"\n✅ Downloaded {len(downloaded_files)} video clips")
-        
+
+        with open(f'{self.output_dir}/visuals_metadata.json', 'w', encoding='utf-8') as f:
+            json.dump(visuals_metadata, f, indent=2, ensure_ascii=False)
+
+        print(f"\n✅ Generated {len(downloaded_files)} AI images")
+
         return downloaded_files
+
+    def _enhance_prompt(self, prompt: str) -> str:
+        """Enhance prompt for better Naruto anime style results"""
+        # Add style modifiers if not present
+        style_keywords = [
+            "anime style", "Naruto artstyle", "cel shaded",
+            "vibrant colors", "detailed", "cinematic lighting",
+            "masterpiece", "high quality", "9:16 aspect ratio"
+        ]
+
+        # Check which style keywords are missing
+        prompt_lower = prompt.lower()
+        missing_styles = [kw for kw in style_keywords if kw not in prompt_lower]
+
+        if missing_styles:
+            enhanced = f"{prompt}, {', '.join(missing_styles[:4])}"
+        else:
+            enhanced = prompt
+
+        return enhanced
 
 
 def main():
-    """Test the visuals fetcher"""
-    
+    """Test the AI image generator"""
+
     try:
-        fetcher = VisualsFetcher()
-        
-        # Try to fetch based on existing script, or use default
+        generator = AIImageGenerator()
+
+        # Try to generate based on existing script, or use default
         output_dir = os.getenv('OUTPUT_DIR', 'output')
         script_path = f"{output_dir}/script.json"
-        
+
         if os.path.exists(script_path):
             print(f"📄 Using script from: {script_path}\n")
-            video_files = fetcher.fetch_videos_for_script()
+            image_files = generator.generate_images_for_scenes()
         else:
-            print("⚠️  No script found. Fetching sample videos...\n")
-            
-            # Fetch some sample videos
-            sample_queries = ["technology", "nature", "city"]
-            video_files = []
-            
-            for query in sample_queries:
-                videos = fetcher.search_videos(query, count=2)
-                
-                for idx, video in enumerate(videos):
-                    filename = f"sample_{query}_{idx}.mp4"
-                    filepath = fetcher.download_video(video['url'], filename)
-                    video_files.append(filepath)
-                    time.sleep(1)
-        
+            print("⚠️  No script found. Generating sample images...\n")
+
+            # Sample Naruto What If prompts
+            sample_prompts = [
+                "Naruto as child awakening Sharingan during Nine-Tails attack, red eyes with tomoe, anime style, Naruto artstyle, dramatic lighting",
+                "Naruto training with Kakashi as Uchiha mentor, Chidori practice, forest background, anime style, vibrant colors",
+                "Naruto vs Sasuke both with Sharingan, different ideals, epic battle, manga panels style, dynamic pose",
+                "Naruto using Mangekyou Sharingan to protect village, Susanoo formation, golden aura, cinematic lighting",
+                "Hokage Naruto with Eternal Mangekyou, peace achieved, sunset over Konoha, detailed background, masterpiece"
+            ]
+
+            image_files = []
+            for idx, prompt in enumerate(sample_prompts):
+                filename = f"sample_scene_{idx+1}.jpg"
+                filepath = generator.generate_image(prompt, filename)
+                image_files.append(filepath)
+                time.sleep(2)
+
         print("\n" + "="*60)
-        print("✅ Video downloads complete!")
+        print("✅ AI Image generation complete!")
         print("="*60)
-        print(f"📁 Total clips downloaded: {len(video_files)}")
-        for f in video_files:
+        print(f"📁 Total images generated: {len(image_files)}")
+        for f in image_files:
             print(f"   • {f}")
         print("="*60)
-        
-    except ValueError as e:
-        print(f"\n❌ Configuration Error: {str(e)}")
-        print("\n💡 To fix this:")
-        print("   1. Get a free API key at https://www.pexels.com/api/")
-        print("   2. Add it to your .env file: PEXELS_API_KEY=your_key_here")
+
     except Exception as e:
         print(f"\n❌ Error: {str(e)}")
         raise

@@ -1,379 +1,251 @@
-# 🎬 End-to-End YouTube Video Upload Workflow
+# 🎬 Naruto What If Bangla Shorts - Automated Pipeline
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Daily%20Automation-green.svg)](https://github.com/features/actions)
 
-A fully automated, **100% free** end-to-end pipeline for creating and publishing YouTube videos using AI and open-source tools.
+**একটি সম্পূর্ণ স্বয়ংক্রিয় বাংলা YouTube Shorts পাইপলাইন** — নারুটো "What If" কাহিনীর জন্য AI স্ক্রিপ্ট, ভয়েসওভার, ইমেজ জেনারেশন, ভিডিও কম্পোজিশন এবং আপলোড।
 
-## ✨ Features
+## ✨ বৈশিষ্ট্য
 
-- 🤖 **AI Script Generation** - Powered by Ollama (local) or Groq (cloud API)
-- 🎙️ **Natural Text-to-Speech** - Microsoft Edge-TTS with 20+ voices
-- 📹 **Automatic Stock Footage** - Downloads from Pexels API
-- 🎨 **Thumbnail Generation** - Professional thumbnails with Pillow
-- 🎬 **Video Composition** - FFmpeg + MoviePy editing
-- 📤 **YouTube Upload** - Automated publishing with OAuth
-- ⏰ **Scheduling** - GitHub Actions automation
-- 💰 **Zero Cost** - All tools and APIs are completely free
+| ফিচার | বিবরণ |
+|----------|-------------|
+| 🤖 **AI স্ক্রিপ্ট জেনারেশন** | Groq/Ollama দিয়ে বাংলা "What If" স্ক্রিপ্ট + দৃশ্য ব্রেকডাউন |
+| 🎙️ **বাংলা TTS** | Microsoft Edge-TTS (`bn-IN-TanishaaNeural`) দিয়ে প্রাকৃতিক ভয়েসওভার |
+| 🎨 **AI ইমেজ জেনারেশন** | Pollinations.ai (Sana/Flux) দিয়ে দৃশ্য-ভিত্তিক অ্যানিমে স্টাইল ইমেজ |
+| 🎬 **শর্টস ভিডিও কম্পোজিশন** | 9:16 (1080x1920), ট্রানজিশন, BGM, SFX, কেন বার্নস ইফেক্ট |
+| 🖼️ **থাম্বনেইল** | বাংলা টেক্সট সাপোর্ট, নারুটো থিম, 9:16 ফরম্যাট |
+| 📤 **ইউটিউব আপলোড** | বাংলা মেটাডেটা, #Shorts ট্যাগ, পাবলিক/প্রাইভেট |
+| ⏰ **দৈনিক অটোমেশন** | GitHub Actions ক্রন (সন্ধ্যা ৭টা BST / ১৩:০০ UTC) |
+| 💰 **শূন্য খরচ** | সব টুল এবং API সম্পূর্ণ ফ্রি |
 
-## 🎥 Demo
+## 🚀 কুইক স্টার্ট
 
-```bash
-# Run the full pipeline
-python main.py
-
-# Output: A complete YouTube video in 3-8 minutes!
-```
-
-**What gets created:**
-- ✅ AI-generated 60-second script
-- ✅ Professional voiceover
-- ✅ HD stock footage (1080p)
-- ✅ Custom thumbnail
-- ✅ Edited and published video
-
-## 🚀 Quick Start
-
-### Prerequisites
-
+### পূর্বশর্ত
 - Python 3.11+
 - FFmpeg
 - Git
 
-### Installation
+### ইনস্টলেশন
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/youtube-automation-workflow.git
-cd youtube-automation-workflow
+# রিপোজিটরি ক্লোন করুন
+git clone https://github.com/mdkamrul71639-blip/naruto-whatif-bangla.git
+cd naruto-whatif-bangla
 
-# Run the automated setup
-chmod +x setup.sh
-./setup.sh
-```
-
-Or install manually:
-
-```bash
-# Install Python dependencies
+# পাইথন ডিপেন্ডেন্সি ইনস্টল করুন
 pip install -r requirements.txt
 
-# Install FFmpeg
-sudo apt install ffmpeg  # Ubuntu/Debian
-brew install ffmpeg      # macOS
+# FFmpeg ইনস্টল করুন (Ubuntu/Debian)
+sudo apt install ffmpeg fonts-noto-bengali
 
-# Copy environment template
+# এনভায়রনমেন্ট ফাইল তৈরি করুন
 cp .env.example .env
-
-# Add your API keys to .env
-nano .env
+# .env ফাইলটি এডিট করে আপনার API কীগুলো যোগ করুন
 ```
 
-### Configuration
+### কনফিগারেশন
 
-Get your free API keys:
+**.env ফাইলে নিচের কীগুলো সেট করুন:**
 
-1. **Pexels API** (Required): https://www.pexels.com/api/
-2. **Groq API** (Optional): https://console.groq.com
-3. **YouTube OAuth** (For uploads): See [YouTube Setup Guide](#youtube-setup)
+1. **GROQ_API_KEY** (প্রয়োজনীয়) - [console.groq.com](https://console.groq.com) থেকে ফ্রি API কী নিন
+2. **YOUTUBE_CLIENT_SECRETS** - Google Cloud Console থেকে OAuth client_secret.json-এর পুরো JSON
+3. **YOUTUBE_TOKEN_PICKLE** - প্রথমবার লোকালি `python scripts/upload.py` চালিয়ে অথরাইজ করুন, তারপর `base64 config/token.pickle` আউটপুটটি এখানে দিন
 
-Add to `.env`:
-```bash
-PEXELS_API_KEY=your_pexels_api_key
-GROQ_API_KEY=your_groq_api_key  # If not using Ollama
-```
-
-### Usage
+### ব্যবহার
 
 ```bash
-# Generate video without uploading
-python main.py --no-upload
-
-# Full pipeline with YouTube upload
+# সম্পূর্ণ পাইপলাইন চালান (আপলোড সহ)
 python main.py
 
-# Specify custom topic
-python main.py --topic "Climate Change Solutions"
+# শুধু ভিডিও বানান (আপলোড ছাড়া)
+python main.py --no-upload
 
-# Run individual components
+# নির্দিষ্ট টপিক দিয়ে চালান
+python main.py --topic "What If Naruto Joined the Akatsuki?"
+
+# পৃথক কম্পোনেন্ট চালান
 python scripts/script_generator.py
 python scripts/voiceover.py
 python scripts/visuals.py
 python scripts/compose.py
+python scripts/thumbnails.py
 python scripts/upload.py
 ```
 
-## 📁 Project Structure
+## 📁 প্রজেক্ট স্ট্রাকচার
 
 ```
-youtube-automation-workflow/
+naruto-whatif-bangla/
 ├── scripts/
-│   ├── script_generator.py    # AI script generation
-│   ├── voiceover.py           # Text-to-speech
-│   ├── visuals.py             # Stock footage fetcher
-│   ├── thumbnails.py          # Thumbnail generator
-│   ├── compose.py             # Video composition
-│   └── upload.py              # YouTube uploader
+│   ├── script_generator.py    # বাংলা স্ক্রিপ্ট + দৃশ্য ব্রেকডাউন
+│   ├── voiceover.py           # Edge-TTS বাংলা ভয়েসওভার
+│   ├── visuals.py             # Pollinations.ai ইমেজ জেনারেশন
+│   ├── thumbnails.py          # বাংলা থাম্বনেইল (9:16)
+│   ├── compose.py             # শর্টস ভিডিও কম্পোজিশন (ট্রানজিশন, BGM, SFX)
+│   └── upload.py              # ইউটিউব শর্টস আপলোড
 ├── config/
-│   └── topics.json            # Content topics
+│   └── topics.json            # নারুটো What If টপিক লিস্ট (রোটেশন সহ)
 ├── .github/workflows/
-│   └── auto-video.yml         # GitHub Actions
-├── main.py                    # Pipeline orchestrator
-├── requirements.txt           # Dependencies
-├── .env.example              # Environment template
-└── README.md                 # This file
+│   └── auto-video.yml         # GitHub Actions ডেইলি ক্রন (১৩:০০ UTC)
+├── main.py                    # পাইপলাইন অর্কেস্ট্রেটর
+├── requirements.txt           # পাইথন ডিপেন্ডেন্সি
+├── .env.example               # এনভায়রনমেন্ট টেমপ্লেট
+└── README.md                  # এই ফাইল
 ```
 
-## 🔧 Configuration
+## 🔧 টপিক কনফিগারেশন
 
-### Topics Configuration
-
-Edit `config/topics.json` to customize your video topics:
+`config/topics.json` ফাইলে নারুটো "What If" টপিকগুলো রয়েছে। প্রতিটি টপিকের সাথে আছে:
+- `title` - ভিডিওর টাইটেল
+- `keywords` - সার্চ কীওয়ার্ড
+- `description` - সংক্ষিপ্ত বর্ণনা
+- `visual_queries` - ইমেজ জেনারেশনের জন্য কোয়েরি
+- `scenes` - দৃশ্যের বিস্তারিত বর্ণনা (LLM-কে গাইড করার জন্য)
 
 ```json
 {
   "topics": [
     {
-      "title": "AI Revolution in 2025",
-      "keywords": ["AI", "technology", "future"],
-      "description": "Exploring the latest AI breakthroughs",
-      "visual_queries": ["artificial intelligence", "robots", "technology"]
+      "title": "What If Naruto Had the Sharingan?",
+      "keywords": ["naruto", "sharingan", "uchiha", "what if"],
+      "description": "Naruto awakens the Sharingan instead of Kurama's power",
+      "visual_queries": ["naruto sharingan", "uchiha eyes", "anime eyes", "ninja battle"],
+      "scenes": [
+        "Naruto as a child awakening Sharingan during the Nine-Tails attack",
+        "Naruto training with Kakashi as his Uchiha mentor",
+        "Naruto vs Sasuke - both with Sharingan, different ideals",
+        "Naruto using Mangekyou Sharingan to protect the village",
+        "Hokage Naruto with Eternal Mangekyou, peace achieved differently"
+      ]
     }
-  ]
+  ],
+  "rotation_strategy": "sequential",
+  "last_used_index": 0
 }
 ```
 
-### Environment Variables
+পাইপলাইন প্রতিদিন পরবর্তী টপিকে রোটেট করবে (`last_used_index` আপডেট করে)।
 
-Available settings in `.env`:
+## 🤖 GitHub Actions অটোমেশন
 
+### সেটআপ
+
+1. **রিপোজিটরি পুশ করুন:**
 ```bash
-# API Keys
-PEXELS_API_KEY=your_key
-GROQ_API_KEY=your_key
-
-# LLM Settings
-USE_OLLAMA=true              # Use local Ollama
-OLLAMA_MODEL=llama3.1:8b
-GROQ_MODEL=llama-3.1-8b-instant
-
-# TTS Voice
-TTS_VOICE=en-US-JennyNeural  # See voice options below
-
-# Video Settings
-VIDEO_WIDTH=1920
-VIDEO_HEIGHT=1080
-VIDEO_FPS=30
-
-# YouTube
-YOUTUBE_PRIVACY_STATUS=public  # public, private, unlisted
-```
-
-### Available TTS Voices
-
-- `en-US-JennyNeural` - Friendly female (default)
-- `en-US-GuyNeural` - Professional male
-- `en-GB-SoniaNeural` - British female
-- `en-AU-NatashaNeural` - Australian female
-- And many more...
-
-## 📺 YouTube Setup
-
-### Step 1: Create Google Cloud Project
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project
-3. Enable "YouTube Data API v3"
-
-### Step 2: Create OAuth Credentials
-
-1. Go to "APIs & Services" → "Credentials"
-2. Click "Create Credentials" → "OAuth 2.0 Client ID"
-3. Application type: **Desktop app**
-4. Download JSON file
-
-### Step 3: Save Credentials
-
-```bash
-# Save the downloaded file as:
-config/client_secrets.json
-```
-
-### Step 4: First-time Authentication
-
-```bash
-# Run the upload script
-python scripts/upload.py
-
-# A browser will open for authentication
-# Grant permissions
-# Token saved to config/token.pickle for future use
-```
-
-## 🤖 GitHub Actions Automation
-
-### Setup
-
-1. **Push to GitHub**
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/youtube-automation-workflow.git
 git push -u origin main
 ```
 
-2. **Add Repository Secrets**
+2. **GitHub Secrets যোগ করুন** (Settings → Secrets and variables → Actions):
 
-Go to Settings → Secrets and variables → Actions, add:
+| Secret Name | বিবরণ | কিভাবে পাবেন |
+|---|---|---|
+| `GROQ_API_KEY` | Groq API কী | [console.groq.com](https://console.groq.com) |
+| `YOUTUBE_CLIENT_SECRETS` | OAuth credentials | `client_secrets.json`-এর পুরো JSON কন্টেন্ট |
+| `YOUTUBE_TOKEN_PICKLE` | Refresh token | `base64 config/token.pickle` আউটপুট |
 
-| Secret Name | Description | How to Get |
-|-------------|-------------|------------|
-| `GROQ_API_KEY` | Groq API key | [console.groq.com](https://console.groq.com) |
-| `PEXELS_API_KEY` | Pexels API key | [pexels.com/api](https://www.pexels.com/api/) |
-| `YOUTUBE_CLIENT_SECRETS` | OAuth credentials | Copy content of `client_secrets.json` |
-| `YOUTUBE_TOKEN_PICKLE` | Refresh token | `base64 config/token.pickle` |
-
-3. **Configure Schedule**
-
-Edit `.github/workflows/auto-video.yml`:
-
+3. **শিডিউল কনফিগার করুন** (`.github/workflows/auto-video.yml`):
 ```yaml
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Every Monday at 9 AM UTC
+    - cron: '0 13 * * *'  # Daily at 13:00 UTC = 7:00 PM BST
 ```
 
-### Manual Trigger
+### ম্যানুয়াল ট্রিগার
+1. Actions ট্যাবে যান
+2. "Naruto What If Bangla Shorts - Daily Automation" সিলেক্ট করুন
+3. "Run workflow" ক্লিক করুন
+4. ঐচ্ছিক: কাস্টম টপিক বা `--no-upload` দিন
 
-1. Go to Actions tab
-2. Select "Automated YouTube Video Pipeline"
-3. Click "Run workflow"
+## 💰 খরচ বিশ্লেষণ
 
-## 💰 Cost Breakdown
+| কম্পোনেন্ট | টুল | খরচ |
+|---|---|---|
+| স্ক্রিপ্ট জেনারেশন | Groq / Ollama | $০ |
+| টেক্সট-টু-স্পিচ | Edge-TTS | $০ |
+| AI ইমেজ জেনারেশন | Pollinations.ai | $০ |
+| ভিডিও এডিটিং | MoviePy + FFmpeg | $০ |
+| থাম্বনেইল | Pillow | $০ |
+| ইউটিউব আপলোড | YouTube Data API v3 | $০ |
+| অটোমেশন | GitHub Actions | $০ (২,০০০ মিনিট/মাস ফ্রি) |
+| **মোট** | | **$০/মাস** |
 
-| Component | Tool | Cost |
-|-----------|------|------|
-| Script Generation | Ollama/Groq | $0 |
-| Text-to-Speech | Edge-TTS | $0 |
-| Stock Footage | Pexels API | $0 |
-| Video Editing | FFmpeg/MoviePy | $0 |
-| Thumbnails | Pillow | $0 |
-| YouTube Upload | YouTube Data API | $0 |
-| Automation | GitHub Actions | $0 |
-| **Total** | | **$0/month** |
+**ফ্রি টিয়ার লিমিট:**
+- Pollinations.ai: অনলিমিটেড (রেট লিমিট সহ)
+- YouTube: ১০,০০০ কোটা ইউনিট/দিন (~১০০ আপলোড)
+- GitHub Actions: ২,০০০ মিনিট/মাস
+- Groq: খুব উদার লিমিট
 
-**Free Tier Limits:**
-- Pexels: 200 requests/hour
-- YouTube: 10,000 quota units/day (~100 uploads)
-- GitHub Actions: 2,000 minutes/month
-- Groq: Very generous limits
+## 📊 পাইপলাইন পারফরম্যান্স
 
-## 📊 Pipeline Performance
+- **গড় পাইপলাইন সময়**: ৫-১০ মিনিট/ভিডিও
+- **ভিডিও কোয়ালিটি**: 1080x1920 (9:16), 30 FPS
+- **অডিও কোয়ালিটি**: হাই-ফিডেলিটি বাংলা TTS
+- **ফাইল সাইজ**: ~১৫-৩০ MB প্রতি শর্টস
 
-- **Average Pipeline Time**: 3-8 minutes per video
-- **Video Quality**: 1080p HD, 30 FPS
-- **Audio Quality**: High-fidelity TTS
-- **File Size**: ~20-50 MB per video
+## 🛠️ অ্যাডভান্সড কাস্টমাইজেশন
 
-## 🛠️ Advanced Usage
+### কাস্টম স্ক্রিপ্ট টেমপ্লেট
+`scripts/script_generator.py`-এ `_create_prompt` মেথড এডিট করুন।
 
-### Custom Script Templates
+### ভিডিও ট্রানজিশন ও ইফেক্ট
+`scripts/compose.py`-এ `_add_ken_burns`, `TRANSITION_DURATION`, `BGM_VOLUME` এডিট করুন।
 
-Edit `scripts/script_generator.py` to customize the script format:
+### থাম্বনেইল কাস্টমাইজেশন
+`scripts/thumbnails.py`-এ রঙ, ফন্ট, নারুটো এলিমেন্ট পরিবর্তন করুন।
 
-```python
-prompt = f"""Create a {duration}-second YouTube script about: {topic}
+### BGM/SFX যোগ করুন
+`output/bgm/` ও `output/sfx/` ফোল্ডারে রয়েলটি-ফ্রি অডিও ফাইল রাখুন।
 
-Your custom instructions here...
-"""
-```
+## 🔍 ট্রাবলশুটিং
 
-### Video Transitions
+| সমস্যা | সমাধান |
+|---------|----------|
+| `ModuleNotFoundError` | `pip install -r requirements.txt` |
+| `FFmpeg not found` | `sudo apt install ffmpeg` / `brew install ffmpeg` |
+| `GROQ_API_KEY not found` | `.env` ফাইলে কী সেট করুন |
+| `YouTube authentication failed` | `config/token.pickle` মুছে `python scripts/upload.py` আবার চালান |
+| `Bangla font not found` | `sudo apt install fonts-noto-bengali` |
+| `Pollinations.ai rate limited` | `IMAGE_MODEL=flux` বা `turbo` ব্যবহার করুন |
 
-Modify `scripts/compose.py` to add custom transitions:
+## 📚 ডকুমেন্টেশন
 
-```python
-clip = clip.fx(fadein, transition_duration)
-clip = clip.fx(fadeout, transition_duration)
-```
+- [Quick Start Guide](QUICKSTART.md) - ১০ মিনিটে সেটআপ
+- [Architecture Overview](ARCHITECTURE.md) - টেকনিক্যাল ডিটেইলস
+- [Setup Summary](SETUP_SUMMARY.md) - সম্পূর্ণ ওভারভিউ
 
-### Thumbnail Customization
+## 🤝 অবদান
 
-Edit `scripts/thumbnails.py` to change colors, fonts, and layout:
-
-```python
-background_color = (20, 25, 35)
-text_color = (255, 255, 255)
-accent_color = (249, 115, 22)
-```
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**"ModuleNotFoundError"**
-```bash
-pip install -r requirements.txt
-```
-
-**"FFmpeg not found"**
-```bash
-sudo apt install ffmpeg  # Ubuntu/Debian
-brew install ffmpeg      # macOS
-```
-
-**"PEXELS_API_KEY not found"**
-- Ensure `.env` file exists in project root
-- Verify API key is correct
-- No quotes around the key value
-
-**"YouTube authentication failed"**
-- Delete `config/token.pickle`
-- Run `python scripts/upload.py` again
-- Complete OAuth flow in browser
-
-For more troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-
-## 📚 Documentation
-
-- [Quick Start Guide](QUICKSTART.md) - 10-minute setup
-- [Architecture Overview](ARCHITECTURE.md) - Technical details
-- [Setup Summary](SETUP_SUMMARY.md) - Complete overview
-- [API Documentation](docs/API.md) - Component APIs
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+কন্ট্রিবিউশন স্বাগতম! Pull Request জমা দিন।
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
+## 📝 লাইসেন্স
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - বিস্তারিতের জন্য [LICENSE](LICENSE) ফাইলটি দেখুন।
 
-## 🙏 Acknowledgments
+## 🙏 স্বীকৃতি
 
-- [Ollama](https://ollama.ai/) - Local LLM runtime
-- [Groq](https://groq.com/) - Fast LLM API
-- [Pexels](https://www.pexels.com/) - Free stock footage
-- [MoviePy](https://zulko.github.io/moviepy/) - Video editing
-- [Edge-TTS](https://github.com/rany2/edge-tts) - Text-to-speech
-- [YouTube Data API](https://developers.google.com/youtube/v3) - Video uploads
+- [Groq](https://groq.com/) - দ্রুত LLM API
+- [Pollinations.ai](https://pollinations.ai/) - ফ্রি AI ইমেজ জেনারেশন
+- [Edge-TTS](https://github.com/rany2/edge-tts) - মাইক্রোসফ্ট বাংলা TTS
+- [MoviePy](https://zulko.github.io/moviepy/) - ভিডিও এডিটিং
+- [YouTube Data API](https://developers.google.com/youtube/v3) - ভিডিও আপলোড
+- [GitHub Actions](https://github.com/features/actions) - ফ্রি CI/CD
 
-## ⭐ Support
+## ⭐ সাপোর্ট
 
-If you find this project helpful, please consider giving it a star on GitHub!
+এই প্রজেক্টটি উপকারী লাগলে ⭐ দিন!
 
-## 📧 Contact
+## 📧 যোগাযোগ
 
-- GitHub Issues: [Create an issue](https://github.com/YOUR_USERNAME/youtube-automation-workflow/issues)
-- Discussions: [Join the discussion](https://github.com/YOUR_USERNAME/youtube-automation-workflow/discussions)
+- GitHub Issues: [Create an issue](https://github.com/mdkamrul71639-blip/naruto-whatif-bangla/issues)
+- Discussions: [Join the discussion](https://github.com/mdkamrul71639-blip/naruto-whatif-bangla/discussions)
 
 ---
 
-**Made with ❤️ using 100% free and open-source tools**
-
-[![Star on GitHub](https://img.shields.io/github/stars/YOUR_USERNAME/youtube-automation-workflow?style=social)](https://github.com/YOUR_USERNAME/youtube-automation-workflow)
+**Made with ❤️ using 100% free and open-source tools for Bangla Naruto fans!**

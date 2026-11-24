@@ -1,0 +1,164 @@
+name: Naruto What If Bangla Shorts - Daily Automation
+
+on:
+  schedule:
+    # Runs daily at 7:00 PM Bangladesh Standard Time (UTC+6)
+    # 7:00 PM BST = 13:00 UTC
+    - cron: '0 13 * * *'
+
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Custom topic (optional, overrides rotation)'
+        required: false
+        type: string
+      no_upload:
+        description: 'Skip YouTube upload (create video only)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build-and-upload:
+    name: Create & Upload Naruto What If Shorts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Python version
+      PYTHON_VERSION: '3.11'
+
+      # Pipeline settings
+      OUTPUT_DIR: 'output'
+      USE_OLLAMA: 'false'  # Use Groq (faster in CI)
+      GROQ_MODEL: 'llama-3.1-8b-instant'
+      OLLAMA_MODEL: 'llama3.1:8b'
+
+      # Video settings for Shorts
+      VIDEO_WIDTH: '1080'
+      VIDEO_HEIGHT: '1920'
+      VIDEO_FPS: '30'
+
+      # TTS Voice - Bangla
+      TTS_VOICE: 'bn-IN-TanishaaNeural'
+
+      # Image generation
+      IMAGE_MODEL: 'sana'
+      IMAGE_WIDTH: '1080'
+      IMAGE_HEIGHT: '1920'
+      IMAGE_NOLOGO: 'true'
+
+      # Audio mixing
+      BGM_VOLUME: '0.15'
+      SFX_VOLUME: '0.3'
+      VOICE_VOLUME: '1.0'
+      TRANSITION_DURATION: '0.5'
+      ADD_TRANSITIONS: 'true'
+
+      # YouTube
+      YOUTUBE_CATEGORY_ID: '24'  # Entertainment
+      YOUTUBE_PRIVACY_STATUS: 'public'
+
+      # Secrets (injected from GitHub Secrets)
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      YOUTUBE_CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+      YOUTUBE_TOKEN_PICKLE: ${{ secrets.YOUTUBE_TOKEN_PICKLE }}
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      # 3. Install system dependencies
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-bengali
+
+      # 4. Install Python dependencies
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 5. Setup Google credentials
+      - name: Setup Google credentials
+        run: |
+          mkdir -p config
+          echo "${{ secrets.YOUTUBE_CLIENT_SECRETS }}" > config/client_secrets.json
+          echo "${{ secrets.YOUTUBE_TOKEN_PICKLE }}" | base64 -d > config/token.pickle
+
+      # 6. Create BGM/SFX directories (optional - add your own files)
+      - name: Setup audio assets
+        run: |
+          mkdir -p output/bgm output/sfx
+
+      # 7. Run the pipeline
+      - name: Run Naruto What If Shorts Pipeline
+        env:
+          MANUAL_TOPIC: ${{ github.event.inputs.topic }}
+          NO_UPLOAD_FLAG: ${{ github.event.inputs.no_upload }}
+        run: |
+          # Handle manual topic override
+          if [ -n "$MANUAL_TOPIC" ] && [ "$MANUAL_TOPIC" != "false" ]; then
+            TOPIC_ARG="--topic \"$MANUAL_TOPIC\""
+          else
+            TOPIC_ARG=""
+          fi
+
+          # Handle no-upload flag
+          if [ "$NO_UPLOAD_FLAG" = "true" ]; then
+            UPLOAD_ARG="--no-upload"
+          else
+            UPLOAD_ARG=""
+          fi
+
+          python main.py $TOPIC_ARG $UPLOAD_ARG
+
+      # 8. Upload artifacts (video, thumbnail, logs)
+      - name: Upload pipeline artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: naruto-whatif-shorts-${{ github.run_number }}
+          path: |
+            output/videos/*.mp4
+            output/thumbnails/*.jpg
+            output/pipeline_results.json
+            output/script.json
+          retention-days: 30
+
+      # 9. Notify on failure (optional)
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Pipeline failed! Check GitHub Actions logs."
+
+      # 10. Notify on success (optional)
+      - name: Notify on success
+        if: success() && github.event_name == 'schedule'
+        run: |
+          echo "Daily Naruto What If Bangla Shorts published successfully!"
+
+      # 11. Commit updated topics.json (rotation index)
+      - name: Commit topics.json rotation
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet config/topics.json; then
+            echo "No changes to topics.json"
+          else
+            git add config/topics.json
+            git commit -m "Update topic rotation index [skip ci]"
+            git push
+            echo "Committed updated topic rotation"

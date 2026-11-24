@@ -2,8 +2,8 @@
 python-dotenv==1.0.0
 
 # LLM / Script Generation
-ollama==0.1.6
-groq==0.4.1
+ollama==0.4.7
+groq==0.5.0
 
 # Text-to-Speech
 edge-tts==6.1.9
@@ -20,10 +20,7 @@ google-api-python-client==2.116.0
 google-auth-oauthlib==1.2.0
 google-auth-httplib2==0.2.0
 
-# Optional: Subtitles/Captions
-openai-whisper==20231117
-
-# Optional: AI Image Generation
-diffusers==0.26.3
-torch==2.2.0
-transformers==4.37.2
+# Optional: AI Image Generation (if using local models)
+# diffusers==0.28.0
+# torch==2.3.0
+# transformers==4.38.0
