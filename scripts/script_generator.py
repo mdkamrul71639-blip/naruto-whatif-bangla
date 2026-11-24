@@ -40,7 +40,7 @@ class ScriptGenerator:
         self.openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
         self.openrouter_model = os.getenv(
             'OPENROUTER_MODEL',
-            'meta-llama/llama-3.3-70b-instruct:free'
+            'google/gemma-4-31b-it:free'
         )
 
     def generate_script(self, topic: str, duration: int = 60) -> Dict[str, str]:
@@ -160,30 +160,49 @@ TAGS: [৫-৮টি প্রাসঙ্গিক ট্যাগ, কমা �
             raise ValueError("OPENROUTER_API_KEY not set in environment variables")
 
         try:
-            response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.openrouter_api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": self.openrouter_model,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "তুমি একজন বিশেষজ্ঞ বাংলা ইউটিউব স্ক্রিপ্ট লেখক। নারুটো \"What If\" শর্টস ভিডিওর জন্য আকর্ষণীয়, দ্রুত গতির স্ক্রিপ্ট লিখে দাও যাতে AI ইমেজ জেনারেশন জন্য দৃশ্যগুলো স্পষ্ট হয়।"
+            import time as _time
+
+            response = None
+            last_err = None
+            # Retry with backoff for rate limits (429) / transient errors
+            for attempt in range(5):
+                try:
+                    response = requests.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {self.openrouter_api_key}",
+                            "Content-Type": "application/json",
                         },
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    "temperature": 0.7,
-                    "max_tokens": 2048
-                },
-                timeout=120
-            )
-            response.raise_for_status()
+                        json={
+                            "model": self.openrouter_model,
+                            "messages": [
+                                {
+                                    "role": "system",
+                                    "content": "তুমি একজন বিশেষজ্ঞ বাংলা ইউটিউব স্ক্রিপ্ট লেখক। নারুটো \"What If\" শর্টস ভিডিওর জন্য আকর্ষণীয়, দ্রুত গতির স্ক্রিপ্ট লিখে দাও যাতে AI ইমেজ জেনারেশন জন্য দৃশ্যগুলো স্পষ্ট হয়।"
+                                },
+                                {
+                                    "role": "user",
+                                    "content": prompt
+                                }
+                            ],
+                            "temperature": 0.7,
+                            "max_tokens": 2048
+                        },
+                        timeout=120
+                    )
+                    response.raise_for_status()
+                    break
+                except requests.exceptions.RequestException as req_err:
+                    last_err = req_err
+                    status = getattr(req_err.response, 'status_code', None)
+                    # Retry on 429 (rate limit) and 5xx; fail fast on 401/404
+                    if status in (429, 500, 502, 503, 504) and attempt < 4:
+                        wait = 15 * (attempt + 1)
+                        print(f"⏳ OpenRouter {status}, retrying in {wait}s (attempt {attempt+2}/5)...")
+                        _time.sleep(wait)
+                        continue
+                    raise
+
             data = response.json()
 
             content = data["choices"][0]["message"]["content"]
