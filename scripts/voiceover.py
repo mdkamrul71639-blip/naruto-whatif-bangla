@@ -81,7 +81,31 @@ class VoiceoverGenerator:
             return str(output_path)
 
         except Exception as e:
-            raise RuntimeError(f"Failed to generate voiceover: {str(e)}")
+            # Edge-TTS can be blocked on cloud/CI servers (403 from Bing)
+            # Fall back to gTTS (Google Translate TTS) - free, no key, supports Bangla
+            print(f"⚠️  Edge-TTS failed ({str(e)[:100]}), falling back to gTTS...")
+            return self._generate_with_gtts(text, output_path)
+
+    def _generate_with_gtts(self, text: str, output_path: Path) -> str:
+        """Fallback: generate Bangla voiceover using gTTS (free, no API key)"""
+
+        try:
+            from gtts import gTTS
+
+            tts = gTTS(text=text, lang='bn', slow=False)
+            tts.save(str(output_path))
+
+            print(f"✅ Voiceover (gTTS) saved to: {output_path}")
+            print(f"📏 Text length: {len(text)} characters")
+
+            return str(output_path)
+
+        except ImportError:
+            raise RuntimeError(
+                "Both Edge-TTS and gTTS failed. Install gTTS: pip install gtts"
+            )
+        except Exception as gtts_err:
+            raise RuntimeError(f"gTTS voiceover also failed: {str(gtts_err)}")
 
     async def get_available_voices(self, language: str = "bn") -> list:
         """
