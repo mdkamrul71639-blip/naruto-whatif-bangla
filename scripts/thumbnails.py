@@ -7,7 +7,7 @@ Creates eye-catching YouTube Shorts thumbnails with Bangla text support
 import os
 import json
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 from dotenv import load_dotenv
 
 try:
