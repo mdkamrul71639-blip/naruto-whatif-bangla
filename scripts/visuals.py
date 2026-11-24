@@ -90,7 +90,21 @@ class AIImageGenerator:
             return str(filepath)
 
         except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"Failed to generate image: {str(e)}")
+            status = getattr(e.response, 'status_code', None)
+            # 402/429 = anonymous quota hit -> wait 70s (quota is time-based, ~1 img/min)
+            if status in (402, 429):
+                import time as _time
+                print(f"\n⏳ Pollinations quota hit ({status}), waiting 70s...")
+                _time.sleep(70)
+                response = requests.get(url, stream=True, timeout=180)
+                response.raise_for_status()
+                with open(filepath, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                print(f"\n✅ Image saved (after retry): {filepath}")
+                return str(filepath)
+            raise
 
     def generate_images_for_scenes(self, script_data: Dict = None) -> List[str]:
         """
@@ -126,6 +140,7 @@ class AIImageGenerator:
         print(f"\n🎨 Generating {len(image_prompts)} AI images for scenes...")
 
         downloaded_files = []
+        last_successful = None
 
         for idx, prompt in enumerate(image_prompts):
             # Enhance prompt for Naruto anime style
@@ -136,12 +151,21 @@ class AIImageGenerator:
             try:
                 filepath = self.generate_image(enhanced_prompt, filename)
                 downloaded_files.append(filepath)
+                last_successful = filepath
 
-                # Rate limiting - be nice to the free API
-                time.sleep(2)
+                # Anonymous Pollinations quota is ~1 image/minute - keep gap
+                time.sleep(65)
 
             except Exception as e:
                 print(f"⚠️  Failed to generate {filename}: {str(e)}")
+                # Reuse last successful image so pipeline never stalls
+                if last_successful:
+                    import shutil
+                    fallback_path = str(Path(self.output_dir) / 'images' / filename)
+                    shutil.copy(last_successful, fallback_path)
+                    downloaded_files.append(fallback_path)
+                    print(f"   ↪️  Reusing last successful image for {filename}")
+                    time.sleep(5)
                 continue
 
         # Save metadata
@@ -162,6 +186,9 @@ class AIImageGenerator:
 
     def _enhance_prompt(self, prompt: str) -> str:
         """Enhance prompt for better Naruto anime style results"""
+        # Strip quotes the LLM often wraps prompts in (breaks URL encoding)
+        prompt = prompt.strip().strip('"').strip("'").strip('"').strip('"')
+
         # Add style modifiers if not present
         style_keywords = [
             "anime style", "Naruto artstyle", "cel shaded",
