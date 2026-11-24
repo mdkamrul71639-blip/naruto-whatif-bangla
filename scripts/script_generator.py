@@ -36,6 +36,12 @@ class ScriptGenerator:
         self.ollama_model = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
         self.groq_model = os.getenv('GROQ_MODEL', 'llama-3.1-8b-instant')
         self.groq_api_key = os.getenv('GROQ_API_KEY')
+        # OpenRouter (fallback / alternative to Groq - works from any region)
+        self.openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
+        self.openrouter_model = os.getenv(
+            'OPENROUTER_MODEL',
+            'meta-llama/llama-3.3-70b-instruct:free'
+        )
 
     def generate_script(self, topic: str, duration: int = 60) -> Dict[str, str]:
         """
@@ -55,14 +61,18 @@ class ScriptGenerator:
         if self.use_ollama and OLLAMA_AVAILABLE:
             return self._generate_with_ollama(prompt, topic)
 
-        # Otherwise use Groq
+        # Use Groq if key is set
         elif GROQ_AVAILABLE and self.groq_api_key:
             return self._generate_with_groq(prompt, topic)
 
+        # Fallback: OpenRouter (free tier available, works in all regions)
+        elif self.openrouter_api_key:
+            return self._generate_with_openrouter(prompt, topic)
+
         else:
             raise RuntimeError(
-                "No LLM backend available. Please install and configure either "
-                "Ollama or Groq. See README.md for setup instructions."
+                "No LLM backend available. Set OPENROUTER_API_KEY or GROQ_API_KEY "
+                "in .env / GitHub Secrets."
             )
 
     def _create_prompt(self, topic: str, duration: int) -> str:
@@ -138,6 +148,49 @@ TAGS: [৫-৮টি প্রাসঙ্গিক ট্যাগ, কমা �
 
         except Exception as e:
             raise RuntimeError(f"Ollama generation failed: {str(e)}")
+
+    def _generate_with_openrouter(self, prompt: str, topic: str) -> Dict[str, str]:
+        """Generate script using OpenRouter API (works from any region, free tier)"""
+
+        import requests
+
+        print(f"🤖 Generating Bangla script with OpenRouter ({self.openrouter_model})...")
+
+        if not self.openrouter_api_key:
+            raise ValueError("OPENROUTER_API_KEY not set in environment variables")
+
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.openrouter_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.openrouter_model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "তুমি একজন বিশেষজ্ঞ বাংলা ইউটিউব স্ক্রিপ্ট লেখক। নারুটো \"What If\" শর্টস ভিডিওর জন্য আকর্ষণীয়, দ্রুত গতির স্ক্রিপ্ট লিখে দাও যাতে AI ইমেজ জেনারেশন জন্য দৃশ্যগুলো স্পষ্ট হয়।"
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 2048
+                },
+                timeout=120
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            content = data["choices"][0]["message"]["content"]
+            return self._parse_script_response(content, topic)
+
+        except Exception as e:
+            raise RuntimeError(f"OpenRouter generation failed: {str(e)}")
 
     def _generate_with_groq(self, prompt: str, topic: str) -> Dict[str, str]:
         """Generate script using Groq API"""
