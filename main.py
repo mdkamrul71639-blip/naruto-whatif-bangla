@@ -10,6 +10,7 @@ import json
 import asyncio
 from pathlib import Path
 from datetime import datetime
+from typing import Optional, Dict
 from dotenv import load_dotenv
 
 # Add scripts directory to path
