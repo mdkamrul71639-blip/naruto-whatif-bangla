@@ -209,7 +209,56 @@ TAGS: [৫-৮টি প্রাসঙ্গিক ট্যাগ, কমা �
             return self._parse_script_response(content, topic)
 
         except Exception as e:
-            raise RuntimeError(f"OpenRouter generation failed: {str(e)}")
+            # OpenRouter failed (rate limit / invalid key) - fall back to free Pollinations text API
+            print(f"⚠️  OpenRouter failed ({str(e)[:100]}), falling back to Pollinations.ai text API...")
+            return self._generate_with_pollinations(prompt, topic)
+
+    def _generate_with_pollinations(self, prompt: str, topic: str) -> Dict[str, str]:
+        """Generate script using Pollinations.ai text API (free, no API key needed)"""
+
+        import requests
+        import time as _time
+
+        print(f"🤖 Generating Bangla script with Pollinations.ai (free, no key)...")
+
+        response = None
+        # Retry with backoff for rate limits
+        for attempt in range(5):
+            try:
+                response = requests.post(
+                    "https://text.pollinations.ai/openai",
+                    headers={"Content-Type": "application/json"},
+                    json={
+                        "model": "openai",
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "তুমি একজন বিশেষজ্ঞ বাংলা ইউটিউব স্ক্রিপ্ট লেখক। নারুটো \"What If\" শর্টস ভিডিওর জন্য আকর্ষণীয়, দ্রুত গতির স্ক্রিপ্ট লিখে দাও যাতে AI ইমেজ জেনারেশন জন্য দৃশ্যগুলো স্পষ্ট হয়।"
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        "temperature": 0.7,
+                        "max_tokens": 2048
+                    },
+                    timeout=180
+                )
+                response.raise_for_status()
+                break
+            except requests.exceptions.RequestException as req_err:
+                status = getattr(req_err.response, 'status_code', None)
+                if status in (429, 500, 502, 503, 504) and attempt < 4:
+                    wait = 20 * (attempt + 1)
+                    print(f"⏳ Pollinations {status}, retrying in {wait}s (attempt {attempt+2}/5)...")
+                    _time.sleep(wait)
+                    continue
+                raise
+
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+        return self._parse_script_response(content, topic)
 
     def _generate_with_groq(self, prompt: str, topic: str) -> Dict[str, str]:
         """Generate script using Groq API"""
