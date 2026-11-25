@@ -2,9 +2,19 @@
   "topics": [
     {
       "title": "What If Naruto Had the Sharingan?",
-      "keywords": ["naruto", "sharingan", "uchiha", "what if"],
+      "keywords": [
+        "naruto",
+        "sharingan",
+        "uchiha",
+        "what if"
+      ],
       "description": "Naruto awakens the Sharingan instead of Kurama's power",
-      "visual_queries": ["naruto sharingan", "uchiha eyes", "anime eyes", "ninja battle"],
+      "visual_queries": [
+        "naruto sharingan",
+        "uchiha eyes",
+        "anime eyes",
+        "ninja battle"
+      ],
       "scenes": [
         "Naruto as a child awakening Sharingan during the Nine-Tails attack",
         "Naruto training with Kakashi as his Uchiha mentor",
@@ -15,9 +25,19 @@
     },
     {
       "title": "What If Naruto Was Raised by Jiraiya?",
-      "keywords": ["naruto", "jiraiya", "raised by", "sannin"],
+      "keywords": [
+        "naruto",
+        "jiraiya",
+        "raised by",
+        "sannin"
+      ],
       "description": "Jiraiya takes Naruto from birth, trains him as a true sage",
-      "visual_queries": ["jiraiya training naruto", "toad sage mode", "mount myoboku", "ninja training"],
+      "visual_queries": [
+        "jiraiya training naruto",
+        "toad sage mode",
+        "mount myoboku",
+        "ninja training"
+      ],
       "scenes": [
         "Baby Naruto handed to Jiraiya by the Third Hokage",
         "Young Naruto learning to summon toads at Mount Myoboku",
@@ -28,9 +48,19 @@
     },
     {
       "title": "What If Naruto Joined the Akatsuki?",
-      "keywords": ["naruto", "akatsuki", "what if", "villain arc"],
+      "keywords": [
+        "naruto",
+        "akatsuki",
+        "what if",
+        "villain arc"
+      ],
       "description": "A twist of fate leads Naruto to the Akatsuki instead of Konoha",
-      "visual_queries": ["naruto akatsuki cloak", "red cloud cloak", "akatsuki members", "dark naruto"],
+      "visual_queries": [
+        "naruto akatsuki cloak",
+        "red cloud cloak",
+        "akatsuki members",
+        "dark naruto"
+      ],
       "scenes": [
         "Naruto meeting Itachi and Kisame instead of Team 7",
         "Naruto wearing the Akatsuki cloak with a slash through his headband",
@@ -41,9 +71,20 @@
     },
     {
       "title": "What If Minato and Kushina Survived?",
-      "keywords": ["naruto", "minato", "kushina", "parents alive", "family"],
+      "keywords": [
+        "naruto",
+        "minato",
+        "kushina",
+        "parents alive",
+        "family"
+      ],
       "description": "The Fourth Hokage and his wife survive the Nine-Tails attack",
-      "visual_queries": ["minato namikaze", "kushina uzumaki", "naruto family", "fourth hokage"],
+      "visual_queries": [
+        "minato namikaze",
+        "kushina uzumaki",
+        "naruto family",
+        "fourth hokage"
+      ],
       "scenes": [
         "Minato sealing half of Kurama into himself, surviving with Kushina",
         "Young Naruto growing up with loving parents in the Hokage mansion",
@@ -54,9 +95,19 @@
     },
     {
       "title": "What If Naruto Had the Rinnegan?",
-      "keywords": ["naruto", "rinnegan", "six paths", "god mode"],
+      "keywords": [
+        "naruto",
+        "rinnegan",
+        "six paths",
+        "god mode"
+      ],
       "description": "Naruto awakens the legendary Rinnegan, becoming a god of shinobi",
-      "visual_queries": ["naruto rinnegan", "six paths sage mode", "hagoromo otsutsuki", "god naruto"],
+      "visual_queries": [
+        "naruto rinnegan",
+        "six paths sage mode",
+        "hagoromo otsutsuki",
+        "god naruto"
+      ],
       "scenes": [
         "Hagoromo Otsutsuki appearing to Naruto during the War Arc",
         "Naruto awakening Rinnegan with all Six Paths abilities",
@@ -67,9 +118,20 @@
     },
     {
       "title": "What If Naruto Was an Uchiha?",
-      "keywords": ["naruto", "uchiha", "clan", "what if", "bloodline"],
+      "keywords": [
+        "naruto",
+        "uchiha",
+        "clan",
+        "what if",
+        "bloodline"
+      ],
       "description": "Naruto born into the Uchiha clan with Uzumaki vitality",
-      "visual_queries": ["uchiha naruto", "sharingan naruto", "uchiha clan", "fire style jutsu"],
+      "visual_queries": [
+        "uchiha naruto",
+        "sharingan naruto",
+        "uchiha clan",
+        "fire style jutsu"
+      ],
       "scenes": [
         "Naruto as Fugaku and Mikoto's secret third son",
         "Naruto awakening Sharingan during the Uchiha Massacre night",
@@ -80,5 +142,5 @@
     }
   ],
   "rotation_strategy": "sequential",
-  "last_used_index": 0
+  "last_used_index": 1
 }
